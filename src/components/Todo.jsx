@@ -1,53 +1,74 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { CiTrash } from "react-icons/ci";
 import { BiEdit } from "react-icons/bi";
 import { useDispatch, useSelector } from "react-redux";
-import { addTodo, editTodo, removeTodo } from "./action";
-
+import { addTodoAsync, deleteTodoAsync, editTodoAsync, fetchTodoAsync, selectTodo } from "./todoSlice";
 function Todo() {
-    const dispatch = useDispatch()
-    const [text,setText] =useState('')
-    const [editId,setEditId] = useState(null)
-    const state = useSelector(state=>state)
-   const handleSubmit =(e)=>{
+  const [text, setText] = useState("");
+  const [data, setdata] = useState();
+  const [editId, setEditId] = useState(null);
+  const dispatch = useDispatch()
+  const todos = useSelector(selectTodo)
+
+  const handleSubmit = () => {
+    
     if(!text){
-        alert("please input")
+      alert("please write something")
     }else if(editId !== null){
-        dispatch(editTodo(editId,text))
+        const update ={
+          text,
+          id:editId.id
+        }
+        dispatch(editTodoAsync(update))
         setEditId(null)
     }else{
-        dispatch(addTodo(text))
+      dispatch(addTodoAsync(text))
     }
-   
-    setText(state.value)
-   }
-   const handleEdit =(i)=>{
-       setText( state.todos[i])
-       setEditId(i)
-   }
+    setText("");
+  };
+  const handleRemove = (id) => {
+    dispatch(deleteTodoAsync(id))
+  };
+
+  const handleEdit = (elm) => {
+    setText(todos?.map((elem)=>{
+      if(elem.id===elm.id){
+        return elem.text
+      }
+    }));
+    setEditId(elm);
+  };
+
+  
+  useEffect(() => {
+    dispatch(fetchTodoAsync())
+  },[dispatch]);
+ 
   return (
     <>
       <div className="container">
         <div className="mt-5">
           <div className="mb-3">
-            <label for="exampleInputEmail1" className="form-label">
+            <label className="form-label">
               Add todos
             </label>
             <input
-            value={text}
+              value={text}
               type="text"
               className="form-control"
               id="exampleInputEmail1"
-              onChange={(e)=>setText(e.target.value)}
+              onChange={(e) => setText(e.target.value)}
             />
           </div>
-          <button type="submit" onClick={handleSubmit} className="btn btn-primary">
-            {
-                editId !== null ? "Edit":"submit"
-            }
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="btn btn-primary"
+          >
+            {editId !== null ? "Edit" : "submit"}
           </button>
         </div>
-        <table class="table">
+        <table className="table">
           <thead>
             <tr>
               <th scope="col">Todo</th>
@@ -55,19 +76,27 @@ function Todo() {
             </tr>
           </thead>
           <tbody>
-           {
-            state?.todos.map((elm,i)=>{
-                return(
-                    <tr>
-                    <td>{elm}</td>
-                    <td>
-                      <span style={{cursor:"pointer"}} onClick={()=>dispatch(removeTodo(i))}><CiTrash fontSize="25px"/></span>
-                      <span style={{cursor:"pointer"}} onClick={()=>handleEdit(i)}><BiEdit fontSize="25px"/></span>
-                    </td>
-                  </tr>
-                )
-            })
-           }
+            {todos?.map((elm, i) => {
+              return (
+                <tr key={i}>
+                  <td>{elm.text}</td>
+                  <td>
+                    <span
+                      onClick={() => handleRemove(elm.id)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <CiTrash fontSize="25px" />
+                    </span>
+                    <span
+                      onClick={() => handleEdit(elm)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <BiEdit fontSize="25px" />
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
